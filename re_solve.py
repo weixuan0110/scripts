@@ -632,6 +632,11 @@ def run_objdump(path: Path, outdir: Path):
 
 
 def write_pseudocode(outdir: Path, info: dict, res: dict, source_label: str):
+    # Ghidra/IDA scripts already write real pseudocode.c + decompiled/*.c.
+    # Never clobber those with the metadata-only stub below.
+    existing = outdir / "pseudocode.c"
+    if existing.exists() and existing.stat().st_size > 512:
+        return
     funcs = res.get("functions", [])
     parts = ["/*",
              " * PSEUDOCODE (reference only) -- %s" % source_label,
@@ -1232,6 +1237,10 @@ def do_doctor(log: Log):
         ("ilspycmd", find_tool("ilspycmd"), ".NET decompile"),
         ("csc", find_tool("csc"), ".NET rebuild"),
     ]
+    extra = [("cfr", find_cfr()), ("dex2jar", None), ("ilspycmd(dll)", find_ilspy_dll())]
+    for label, p in extra:
+        if p:
+            checks.append((label, Path(p), ""))
     for label, p in [("java", shutil.which("java")), ("javac", shutil.which("javac")),
                      ("jar", shutil.which("jar")), ("dotnet", shutil.which("dotnet")),
                      ("gcc", shutil.which("gcc")), ("clang", shutil.which("clang")),

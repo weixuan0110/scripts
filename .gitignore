@@ -7,3 +7,11 @@ __pycache__/
 *.pcap
 *.pcapng
 *.patched.*
+*_ctf/
+*_apk/
+*_ipa/
+*_forensics/
+*_steg/
+*_misc/
+*_re/
+*.i64
