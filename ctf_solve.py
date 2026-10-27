@@ -211,11 +211,14 @@ def main(argv=None):
                                            "text", "unknown"))
     ap.add_argument("--quiet", action="store_true", help="only the flag summary")
     ap.add_argument("--list", action="store_true")
-    ap.add_argument("command", nargs="?", default=None,
-                    choices=("doctor",), help="doctor | (omit for analysis)")
+    ap.add_argument("--doctor", action="store_true", help="show installed tools")
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "doctor":
+        doctor()
+        return 0
     args = ap.parse_args(argv)
 
-    if args.command == "doctor":
+    if args.doctor:
         doctor()
         return 0
     if args.list:
