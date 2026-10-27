@@ -1,0 +1,9 @@
+.tmp_*/
+__pycache__/
+*.pyc
+!tools/**
+*_analysis/
+*_re/
+*.pcap
+*.pcapng
+*.patched.*
