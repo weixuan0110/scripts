@@ -62,7 +62,7 @@ This is the part most tooling lies about, so it is explicit here:
 |---|---|---|---|
 | .NET exe/dll | `ilspycmd` (bundled) or dnSpy | `csc` → new exe, runs | **yes**: edited the base64 flag, rebuilt, new flag accepted, old rejected |
 | `.jar` / `.class` | CFR (bundled) | `javac` + `jar` (manifest/Main-Class preserved) | **yes**: same test, `java -jar` verified |
-| APK / DEX | dex2jar + CFR → Java, apktool → manifest/smali | `apktool b` + zipalign + apksigner | pipeline runs on a real APK (see notes) |
+| APK / DEX | dex2jar + CFR → Java, apktool → manifest/smali | `apktool b` + zipalign + apksigner | **yes**: full decode → build → zipalign → sign → verify on a real 14 MiB APK (package/sdk preserved) |
 | IPA (Mach-O) | Ghidra/IDA | patch the Mach-O → repack IPA (signing needs macOS/`ldid`) | **yes**: arm64 `ret` patched into `__text`, IPA repacked |
 | `.pyc` | `pycdc`/`decompyle3` if present, else bytecode+consts | `py_compile` → `.pyc` | mechanics verified |
 | native ELF/PE | Ghidra or IDA → pseudo-C | **not recompilable**; use `patch` (byte-exact) or reimplement in C and `rebuild` | **yes**: patched `check()` to `mov eax,1; ret`, binary now accepts any input |
@@ -194,6 +194,7 @@ Every path below was executed on this machine, not just written:
 
 | test | result |
 |---|---|
+| pcapng input (converted capture) | same 7/7 flags as the pcap run |
 | synthetic pcap (80 pkts) with DNS exfil, TXT flag, gzip+chunked HTTP, Basic auth, form creds, FTP/SMTP creds, SNI, SSH, ICMP tunnel, IP-ID and TCP-seq channels, ARP spoof, PNG/ZIP payloads | 7/7 flags + all creds + all covert channels found; carved ZIP opens, PNG valid |
 | 100k-packet / 14 MiB pcap | completes end-to-end (scapy dissection dominates runtime) |
 | PE crackme via IDA → 85 functions, real C | `check`/`main` recovered |
@@ -202,8 +203,9 @@ Every path below was executed on this machine, not just written:
 | keystone patch of `check()` in PE | patched exe accepts a wrong password (VA→offset + PE checksum) |
 | .NET crackme → ilspycmd → edit → `csc` | new flag accepted, old rejected |
 | JAR crackme → CFR → edit → `javac`+`jar` | new flag accepted, old rejected |
+| APK signing path | zipalign + apksigner + `apksigner verify` all ok |
 | synthetic IPA (arm64 Mach-O, plist, provisioning, Firebase plist) | plist/ATS/Mach-O/flag/secrets parsed; `ret` patched at 0x1000; IPA repacked |
-| real APK (FridayCake.apk, 14 MiB) | package/sdk/permissions/exported/cert/900 entries; dex2jar+CFR Java sources |
+| real APK (FridayCake.apk, 14 MiB) | package/sdk/permissions/exported/cert/900 entries; dex2jar+CFR → 2980 Java files; apktool manifest; full rebuild+sign verified (apksigner verify ok, debug cert) |
 | synthetic 4 MiB disk image (MBR, FAT32, PNG/JPEG+EXIF/ZIP/PDF payloads) | partition+fs detected, all four files carved at exact sizes, EXIF/PDF/ZIP flags found |
 | PNG with LSB payload + tEXt + trailing data, zero-width file, whitespace file | all three flags recovered |
 | base64→hex chain, single-byte XOR, RSA with Fermat-factorable n, Caesar | all recovered |

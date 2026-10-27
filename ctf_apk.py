@@ -656,14 +656,16 @@ def keystore_path():
     return ks
 
 
-def sign_apk(apk: Path, log: Log):
+def sign_apk(apk: Path, log: Log, outdir=None):
     apksigner = find_android("apksigner")
     zipalign = find_android("zipalign")
     ks = keystore_path()
-    out = apk.with_name(apk.stem + "_signed.apk")
+    dest = Path(outdir) if outdir else apk.parent
+    dest.mkdir(parents=True, exist_ok=True)
+    out = dest / (apk.stem + "_signed.apk")
     work = apk
     if zipalign:
-        aligned = apk.with_name(apk.stem + "_aligned.apk")
+        aligned = dest / (apk.stem + "_aligned.apk")
         rc, o = run([zipalign, "-p", "-f", "4", str(apk), str(aligned)], timeout=300)
         if rc == 0:
             work = aligned
@@ -720,7 +722,7 @@ def rebuild(apk: Path, outdir: Path, log: Log, source=None, timeout=900):
             log.p("    " + line[:180])
         return None
     log.p("  built     : %s (%s)" % (out_apk.name, human(out_apk.stat().st_size)))
-    signed = sign_apk(out_apk, log)
+    signed = sign_apk(out_apk, log, outdir)
     if signed:
         log.p("  signed    : %s" % signed)
         log.p("  install   : adb install -r %s" % signed.name)
@@ -766,7 +768,7 @@ def main(argv=None):
         return 0 if ok else 1
 
     if args.command == "sign":
-        signed = sign_apk(apk, log)
+        signed = sign_apk(apk, log, outdir)
         if args.json:
             print(json.dumps({"signed": str(signed) if signed else None}))
         return 0 if signed else 1
